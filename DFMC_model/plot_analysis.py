@@ -7,8 +7,6 @@ from matplotlib import cm
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import make_axes_locatable, axes_size
-from evaluate_model import METRICS
-from DFMC_model import NODATAVAL
 
 
 ###################################################################
@@ -27,12 +25,12 @@ def plot_gof(df_TS_gof: pd.DataFrame,
     aspect = 20
     pad_fraction = 0.5
     Ncols = 2
-    Nrows = int(len(METRICS)/Ncols)
+    Nrows = int(len(METRICS_PALETTE)/Ncols)
     fig = plt.figure(figsize=(7.5*Ncols, 7.5*Nrows), dpi=100)
     gs = GridSpec(Nrows, Ncols, figure=fig)
     col = 0
     row = 0
-    for mm in METRICS:
+    for mm in METRICS_PALETTE:
         ax = fig.add_subplot(gs[row, col])
         ax.set_title(f'Metric: {mm}', fontsize=13)
         col += 1
@@ -139,7 +137,7 @@ def plot_points(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
 # PLOT Time Series
 ###################################################################
 def plot_time_series(time_series: pd.DataFrame):
-    time_serie = time_series.replace(to_replace=NODATAVAL,
+    time_serie = time_series.replace(to_replace=-9999,
                                      value=np.nan)
     time_serie['time'] = pd.to_datetime(time_serie['time'].values)
     time_serie.loc[:, 'day_night'] = np.where((time_serie.time.dt.hour >= 6) &
@@ -159,8 +157,8 @@ def plot_time_series(time_series: pd.DataFrame):
     ax = fig.add_subplot(gs[0, 0])
     time_serie['DFMC'].plot(ax=ax, label='DFMC - observed', color='k')
     lines_lgd.append(['k', '-', 'DFMC - observed'])
-    time_serie['DFMC_model'].plot(ax=ax, label='DFMC', color='green')
-    lines_lgd.append(['green', '-', 'DFMC'])
+    time_serie['DFMC_model'].plot(ax=ax, label='DFMC - model', color='green')
+    lines_lgd.append(['green', '-', 'DFMC - model'])
     time_serie['EMC'].plot(ax=ax, label='EMC', linestyle='--', color='green')
     lines_lgd.append(['green', '--', 'EMC'])
     for i in time_serie.index:
