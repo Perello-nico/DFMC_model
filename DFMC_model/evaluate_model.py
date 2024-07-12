@@ -136,7 +136,7 @@ def evaluate_model(X: np.array, df_TS: pd.DataFrame, type_ts: str):
             'K_const': [pd.Series(k_const[0, x, :], name='K_const')
                         for x in range(N_TS)],
         },
-        index=df_TS.index
+        index=range(N_TS)
     )
     gof = np.full((N_parts, N_TS, len(METRICS)), NODATAVAL, dtype='float')
     for mm, metr in enumerate(METRICS):
@@ -230,28 +230,28 @@ def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
         params = build_params(x=X[pp, :], type_ts=type_ts)
         if type_ts == 'rain':
             for ts in range(N_TS):
-                dfmc[pp, ts, 0] = df_TS.loc[ts, 'DFMC'].values[0]
+                dfmc[pp, ts, 0] = df_TS.iloc[ts]['DFMC'].values[0]
                 if mode == 'calibration':
                     dfmc[pp, ts, 1:] = rain_phase(
-                        rain=df_TS.loc[ts, 'Rain'].values[1:],
-                        moisture=df_TS.loc[ts, 'DFMC'].values[0:-1],
+                        rain=df_TS.iloc[ts]['Rain'].values[1:],
+                        moisture=df_TS.iloc[ts]['DFMC'].values[0:-1],
                         params=params)
                 elif mode == 'validation':
                     for tt in range(1, N_times):
                         dfmc[pp, ts, tt] = rain_phase(
-                            rain=df_TS.loc[ts, 'Rain'].values[tt],
+                            rain=df_TS.iloc[ts]['Rain'].values[tt],
                             moisture=dfmc[pp, ts, tt-1],
                             params=params)
         elif type_ts == 'no_rain':
             for ts in range(N_TS):
-                dfmc[pp, ts, 0] = df_TS.loc[ts, 'DFMC'].values[0]
+                dfmc[pp, ts, 0] = df_TS.iloc[ts]['DFMC'].values[0]
                 if mode == 'calibration':
                     dfmc[pp, ts, 1:], phase[pp, ts, 1:], \
                         emc[pp, ts, 1:], k_const[pp, ts, 1:] = no_rain_phase(
-                            moisture=df_TS.loc[ts, 'DFMC'].values[0:-1],
-                            temp=df_TS.loc[ts, 'Temp'].values[1:],
-                            wspeed=df_TS.loc[ts, 'Wspeed'].values[1:],
-                            hum=df_TS.loc[ts, 'Hum'].values[1:],
+                            moisture=df_TS.iloc[ts]['DFMC'].values[0:-1],
+                            temp=df_TS.iloc[ts]['Temp'].values[1:],
+                            wspeed=df_TS.iloc[ts]['Wspeed'].values[1:],
+                            hum=df_TS.iloc[ts]['Hum'].values[1:],
                             params=params)
                 elif mode == 'validation':
                     for tt in range(1, N_times):
@@ -259,21 +259,21 @@ def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
                             emc[pp, ts, tt], k_const[pp, ts, tt] = \
                             no_rain_phase(
                                 moisture=dfmc[pp, ts, tt-1],
-                                temp=df_TS.loc[ts, 'Temp'].values[tt],
-                                wspeed=df_TS.loc[ts, 'Wspeed'].values[tt],
-                                hum=df_TS.loc[ts, 'Hum'].values[tt],
+                                temp=df_TS.iloc[ts]['Temp'].values[tt],
+                                wspeed=df_TS.iloc[ts]['Wspeed'].values[tt],
+                                hum=df_TS.iloc[ts]['Hum'].values[tt],
                                 params=params)
         elif type_ts == 'mixed':
             for ts in range(N_TS):
-                dfmc[pp, ts, 0] = df_TS.loc[ts, 'DFMC'].values[0]
+                dfmc[pp, ts, 0] = df_TS.iloc[ts]['DFMC'].values[0]
                 if mode == 'calibtation':
                     dfmc[pp, ts, 1:], phase[pp, ts, 1:], \
                         emc[pp, ts, 1:], k_const[pp, ts, 1:] = compute_DFMC(
-                        moisture=df_TS.loc[ts, 'DFMC'].values[0:-1],
-                        rain=df_TS.loc[ts, 'Rain'].values[1:],
-                        temp=df_TS.loc[ts, 'Temp'].values[1:],
-                        hum=df_TS.loc[ts, 'Hum'].values[1:],
-                        wspeed=df_TS.loc[ts, 'Wspeed'].values[1:],
+                        moisture=df_TS.iloc[ts]['DFMC'].values[0:-1],
+                        rain=df_TS.iloc[ts]['Rain'].values[1:],
+                        temp=df_TS.iloc[ts]['Temp'].values[1:],
+                        hum=df_TS.iloc[ts]['Hum'].values[1:],
+                        wspeed=df_TS.iloc[ts]['Wspeed'].values[1:],
                         params=params)
                 elif mode == 'validation':
                     for tt in range(1, N_times):
@@ -281,10 +281,10 @@ def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
                             emc[pp, ts, tt], k_const[pp, ts, tt] = \
                             compute_DFMC(
                                 moisture=dfmc[pp, ts, tt-1],
-                                rain=df_TS.loc[ts, 'Rain'].values[tt],
-                                temp=df_TS.loc[ts, 'Temp'].values[tt],
-                                hum=df_TS.loc[ts, 'Hum'].values[tt],
-                                wspeed=df_TS.loc[ts, 'Wspeed'].values[tt],
+                                rain=df_TS.iloc[ts]['Rain'].values[tt],
+                                temp=df_TS.iloc[ts]['Temp'].values[tt],
+                                hum=df_TS.iloc[ts]['Hum'].values[tt],
+                                wspeed=df_TS.iloc[ts]['Wspeed'].values[tt],
                                 params=params)
     return dfmc, phase, emc, k_const
 
