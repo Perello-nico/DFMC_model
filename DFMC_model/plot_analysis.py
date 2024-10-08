@@ -23,9 +23,17 @@ METRICS_PALETTE = {
     'NNSE': 'centered-0.5'
 }
 
+METRICS_UM = {
+    'MAE': '%',
+    'BIAS': '%',
+    'RMSE': '%',
+    'NNSE': 'adim'
+}
+
 
 def plot_gof(df_TS_gof: pd.DataFrame,
-             Nrows_grid: int = 24, Ncols_grid: int = 17):
+             Nrows_grid: int = 24, Ncols_grid: int = 17,
+             labels: list = None):
     aspect = 20
     pad_fraction = 0.5
     Ncols = 2
@@ -57,12 +65,25 @@ def plot_gof(df_TS_gof: pd.DataFrame,
                                                            Ncols_grid),
                               cmap=cm.Reds, vmin=vmin, vmax=vmax,
                               edgecolors='w')
+
+        # Plotting labels if provided
+        if labels is not None:
+            if len(labels) != Nrows_grid * Ncols_grid:
+                raise ValueError('Wrong number of labels')
+            for i in range(Nrows_grid):
+                for j in range(Ncols_grid):
+                    label = labels[i * Ncols_grid + j]
+                    ax.text(j + 0.5, i + 0.5, f'{label}',
+                            ha='center', va='center',
+                            fontsize=8, color='black')
+
         ax.set(xticks=[], yticks=[])
         divider = make_axes_locatable(ax)
         width = axes_size.AxesY(ax, aspect=1./aspect)
         pad = axes_size.Fraction(pad_fraction, width)
         cax = divider.append_axes('right', size=width, pad=pad)
-        plt.colorbar(c, cax=cax, orientation='vertical')
+        cbar = plt.colorbar(c, cax=cax, orientation='vertical')
+        cbar.set_label(f'[{METRICS_UM[mm]}]', rotation=90)
         plt.box(True)
     plt.subplots_adjust(hspace=0.2, wspace=0.2)
     return fig
@@ -96,7 +117,7 @@ def matrix_TS(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
 # PLOT Points
 ###################################################################
 def plot_points(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
-                clusters: bool = True):
+                clusters: dict = None):
     N_TS = len(df_TS)
     N_times = df_TS.loc[0].DFMC.values.shape[0]
     obs = pd.concat([df_TS.loc[ts, 'DFMC'] for ts in range(N_TS)],
@@ -106,17 +127,12 @@ def plot_points(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
     fig = plt.figure()
     ax = fig.add_subplot()
     ax.grid()
-    if clusters:
-        colors_dict = {  # colors of clusters
-                0: 'green',
-                1: 'orange',
-                2: 'purple'
-        }
+    if not (clusters is None):
         clusters_val = df_TS.cluster.values.repeat(N_times)
-        for cc in colors_dict:
+        for cc, color in clusters.items():
             idx = clusters_val == cc
             ax.scatter(obs[idx], mod[idx],
-                       c=colors_dict[cc], s=0.8,
+                       c=color, s=0.8,
                        label=f'Cluster: {cc}')
         ax.legend()
     else:
@@ -128,8 +144,8 @@ def plot_points(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
         obs.min(), mod.min()
     ])
     range_plot = [min, max]
-    ax.set_xlabel('FFMC observed [%]')
-    ax.set_ylabel('FFMC modeled [%]')
+    ax.set_xlabel('Fuel moisture observed [%]')
+    ax.set_ylabel('Fuel moisture modeled [%]')
     ax.set_xlim(range_plot)
     ax.set_ylim(range_plot)
     ax.set_aspect('equal', adjustable='box')
@@ -246,6 +262,12 @@ def plot_time_series(time_series: pd.DataFrame):
     ax.label_outer()
     ax.grid()
     ax.set_xlim(left=0, right=len(time_serie)-1)
+
+    ax.set_xticks(np.arange(0, len(time_serie),
+                            step=max(len(time_serie)//10, 1)))
+    ax.set_xticklabels(time_serie['time'].dt.strftime(
+        '%Y-%m-%d %H:%M').values[::max(len(time_serie)//10, 1)],
+                       rotation=45, ha='right')
 
     handles, labels = add_legend_all(lines_lgd)
     fig.axes[0].legend(handles, labels, loc='lower left',
