@@ -102,8 +102,8 @@ def matrix_TS(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
     for idx_ts in all_idx_ts:
         idx_grid = np.argwhere(schema_idx == idx_ts)[0]
         ax = fig.add_subplot(gs[Nrows-(idx_grid[0]+1), idx_grid[1]])
-        ffmc_obs = df_TS.loc[idx_ts, 'DFMC'].values
-        ffmc_mod = df_TS_gof.loc[idx_ts, 'DFMC_model'].values
+        ffmc_obs = df_TS.iloc[idx_ts]['DFMC'].values
+        ffmc_mod = df_TS_gof.iloc[idx_ts]['DFMC_model'].values
         ax.plot(ffmc_obs, color='black', linewidth=0.8)
         ax.plot(ffmc_mod, color='tomato', linewidth=0.8)
         max_ = np.max([ffmc_obs.max(), ffmc_mod.max()])
@@ -119,37 +119,31 @@ def matrix_TS(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
 def plot_points(df_TS: pd.DataFrame, df_TS_gof: pd.DataFrame,
                 clusters: dict = None):
     N_TS = len(df_TS)
-    N_times = df_TS.loc[0].DFMC.values.shape[0]
-    obs = pd.concat([df_TS.loc[ts, 'DFMC'] for ts in range(N_TS)],
+    obs = pd.concat([df_TS.iloc[ts]['DFMC'] for ts in range(N_TS)],
                     axis=0).values
-    mod = pd.concat([df_TS_gof.loc[ts, 'DFMC_model'] for ts in range(N_TS)],
+    mod = pd.concat([df_TS_gof.iloc[ts]['DFMC_model'] for ts in range(N_TS)],
                     axis=0).values
     fig = plt.figure()
     ax = fig.add_subplot()
     ax.grid()
     if not (clusters is None):
-        clusters_val = df_TS.cluster.values.repeat(N_times)
+        Nrepeats = [len(df_TS.iloc[ts].DFMC.values) for ts in range(N_TS)]
+        clusters_val = df_TS.cluster.values.repeat(Nrepeats)
         for cc, color in clusters.items():
             idx = clusters_val == cc
             ax.scatter(obs[idx], mod[idx],
                        c=color, s=0.8,
-                       label=f'Cluster: {cc}')
+                       label=f'{cc}')
         ax.legend()
     else:
         ax.scatter(obs, mod, c='royalblue', s=0.8)
-    max = np.max([
-        obs.max(), mod.max()
-    ])
-    min = np.min([
-        obs.min(), mod.min()
-    ])
-    range_plot = [min, max]
+    range_plot = [0, 45]
     ax.set_xlabel('Fuel moisture observed [%]')
     ax.set_ylabel('Fuel moisture modeled [%]')
     ax.set_xlim(range_plot)
     ax.set_ylim(range_plot)
     ax.set_aspect('equal', adjustable='box')
-    ax.plot([min, max], [min, max], color='black', linestyle='--')
+    ax.plot(range_plot, range_plot, color='black', linestyle='--')
     return fig
 
 
