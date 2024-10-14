@@ -107,7 +107,8 @@ def MSL_PSO_algorithm(N_parts: int, N_iters: int, dimension: int,
         print('Particles out of bounds')
     # INITIAL COST - evaluate Objective Function for all particles
     cost = evaluate_swarm(X, *args_OF)
-    order = np.flip(np.argsort(cost))  # order particles - desceding order
+    # order particles - desceding order (miniming costs)
+    order = np.flip(np.argsort(cost))
     centroid = (1/N_parts)*np.sum(X, axis=0)  # centroid of particles
 
     # OPTIMIZATION ################
@@ -161,7 +162,7 @@ def MSL_PSO_algorithm(N_parts: int, N_iters: int, dimension: int,
         # STEP 2: update position and velocity
         # costs of probes
         cost_probes = evaluate_swarm(X_probes, *args_OF)
-        # order probes in descending order
+        # order particles - desceding order (miniming costs)
         order_probes = np.flip(np.argsort(cost_probes))
         for ii, pp in enumerate(order):
             # ranking of the respective probe -> find the index
