@@ -121,13 +121,16 @@ TIME_LAG = {
 }
 
 
-def evaluate_model(X: np.array, df_TS: pd.DataFrame, type_ts: str):
+def evaluate_model_GoF(X: np.array, df_TS: pd.DataFrame, type_ts: str,
+                       calib_params: list, fixed_params: dict) -> pd.DataFrame:
     """Compute the run of the model and GoF for the parameters combination"""
     X = np.array([X])
     N_TS = len(df_TS)
     N_parts = X.shape[0]
     dfmc_obs = get_dfmc_obs(df_TS=df_TS)
     dfmc, phase, emc, k_const = run_model(df_TS=df_TS, X=X, type_ts=type_ts,
+                                          calib_params=calib_params,
+                                          fixed_params=fixed_params,
                                           mode='validation')
     df_TS_gof = pd.DataFrame(
         {
