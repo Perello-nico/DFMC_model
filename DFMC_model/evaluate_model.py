@@ -164,59 +164,74 @@ def get_dfmc_obs(df_TS: pd.DataFrame) -> np.array:
 ###############################################################################
 # EVALUATE SWARM ##############################################################
 ###############################################################################
+
+# dimension of the optimization problem
+DIMENSIONS = {
+    'rain': 3,
+    'no_rain': 13,
+    'mixed': 16
+}
+
+
 def build_params(x: np.array, type_ts: str) -> Dict:
     """Build dictionary of params to run DFMC model"""
-    if type_ts == 'rain':
-        params = {
-            'MIN_RAIN': 0,
-            'R1': x[0],
-            'R2': x[1],
-            'R3': x[2],
-        }
-    elif type_ts == 'no_rain':
-        params = {
-            'A1': x[0],
-            'A2': 0.555,
-            'A3': 10.6,
-            'A4': 0.5022,
-            'A5': 0.0133,
-            'Bd1': x[1],
-            'Bd2': x[2],
-            'Bd3': x[3],
-            'Cd1': x[4],
-            'Cd2': x[5],
-            'Cd3': x[6],
-            'Bw1': x[7],
-            'Bw2': x[8],
-            'Bw3': x[9],
-            'Cw1': x[10],
-            'Cw2': x[11],
-            'Cw3': x[12],
-        }
-    elif type_ts == 'mixed':
-        params = {
-            'A1': x[0],
-            'A2': 0.555,
-            'A3': 10.6,
-            'A4': 0.5022,
-            'A5': 0.0133,
-            'Bd1': x[1],
-            'Bd2': x[2],
-            'Bd3': x[3],
-            'Cd1': x[4],
-            'Cd2': x[5],
-            'Cd3': x[6],
-            'Bw1': x[7],
-            'Bw2': x[8],
-            'Bw3': x[9],
-            'Cw1': x[10],
-            'Cw2': x[11],
-            'Cw3': x[12],
-            'MIN_RAIN': 0.1,
-            'R1': x[13],
-            'R2': x[14],
-            'R3': x[15],
-        }
+    if len(x) != DIMENSIONS[type_ts]:
+        print('ERROR: wrong number of parameters')
+        return None
+    match type_ts:
+        case 'rain':
+            params = {
+                'MIN_RAIN': 0,
+                'R1': x[0],
+                'R2': x[1],
+                'R3': x[2],
+            }
+        case 'no_rain':
+            params = {
+                'A1': x[0],
+                'A2': 0.555,
+                'A3': 10.6,
+                'A4': 0.5022,
+                'A5': 0.0133,
+                'Bd1': x[1],
+                'Bd2': x[2],
+                'Bd3': x[3],
+                'Cd1': x[4],
+                'Cd2': x[5],
+                'Cd3': x[6],
+                'Bw1': x[7],
+                'Bw2': x[8],
+                'Bw3': x[9],
+                'Cw1': x[10],
+                'Cw2': x[11],
+                'Cw3': x[12],
+            }
+        case 'mixed':
+            params = {
+                'A1': x[0],
+                'A2': 0.555,
+                'A3': 10.6,
+                'A4': 0.5022,
+                'A5': 0.0133,
+                'Bd1': x[1],
+                'Bd2': x[2],
+                'Bd3': x[3],
+                'Cd1': x[4],
+                'Cd2': x[5],
+                'Cd3': x[6],
+                'Bw1': x[7],
+                'Bw2': x[8],
+                'Bw3': x[9],
+                'Cw1': x[10],
+                'Cw2': x[11],
+                'Cw3': x[12],
+                'MIN_RAIN': 0.1,
+                'R1': x[13],
+                'R2': x[14],
+                'R3': x[15],
+            }
+        case _:
+            params = None
     return params
 
 
