@@ -5,7 +5,12 @@
 import numpy as np
 import pandas as pd
 from typing import Dict
-from DFMC_model import (rain_phase, no_rain_phase, compute_DFMC, NODATAVAL)
+import os
+import sys
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+from DFMC_model.DFMC_model import (rain_phase, no_rain_phase,
+                                   compute_DFMC, NODATAVAL)
 
 
 ###############################################################################
