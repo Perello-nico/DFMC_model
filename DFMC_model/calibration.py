@@ -7,26 +7,39 @@ import pandas as pd
 import argparse
 import json
 import sys
+import os
+import time
 from MSL_PSO import MSL_PSO_algorithm
-from evaluate_model import evaluate_swarm
+from evaluate_model import evaluate_swarm, DIMENSIONS
 
 
 #####################################################################
-# parameters
+# SETTINGS
 #####################################################################
-ALGORITHMS = {  # List of available optimization algorithms
+
+# paths to calibration and validation default datasets
+dir_path = os.path.dirname(os.path.realpath(__file__))
+path_data_calib = dir_path+'/data_calibration/ISR_dataset'
+
+PATH_CALIBRATION = {
+    'rain': {
+        'calibration': path_data_calib+'/ISR_rain/TS_calibration.pkl',
+        'validation': path_data_calib+'/ISR_rain/TS_validation.pkl',
+    },
+    'no_rain': {
+        'calibration': path_data_calib+'/ISR_no_rain/TS_calibration.pkl',
+        'validation': path_data_calib+'ISR_no_rain/TS_validation.pkl'
+    }
+}
+
+# List of available optimization algorithms
+ALGORITHMS = {
     'MSL_PSO': MSL_PSO_algorithm,
 }
 
 
-DIMENSIONS = {  # dimension of the optimization problem
-    'rain': 3,
-    'no_rain': 13,
-}
-
-
 #####################################################################
-# functions
+# FUNCTIONS
 #####################################################################
 def parse_params():
     parser = argparse.ArgumentParser(description='''Info''')
@@ -39,30 +52,44 @@ def parse_params():
 #####################################################################
 # ALGORITHM
 #####################################################################
-def main():
-    args = parse_params()
-    path_save = '/'.join(args.path.split('/')[:-1])
+def calibrate_model(config_path: str):
+    print('############################')
+    print('DFMC calibration')
+    print('############################\n')
+
+    path_save = '/'.join(config_path.split('/')[:-1])
+    name_json = config_path.split('/')[-1].split('.')[0]
 
     # settings
-    print('Loading settings...')
-    with open(args.path) as f:
+    print('Loading settings')
+    with open(config_path) as f:
         config = json.load(f)
     for kk in config:
         print('     - {}:{}'.format(kk, config[kk]))
+    data_path = config.get('data_path', None)  # if not present, use default
+    try:
+        type_ts = config['type_ts']
+        algorithm = config['algorithm']
+        params_PSO = config['params']
+        min_val = config['min_val']
+        max_val = config['max_val']
+        N_parts = config['n_particles']
+        N_iters = config['N_iters']
+        N_epoch = config['N_epoch']
+    except Exception as e:
+        print('ERROR: missing settings in the configuration file')
+        print(e)
+        sys.exit()
+    # check the algorithm
+    if algorithm not in ALGORITHMS.keys():
+        print('ERROR: algorithm not available')
+        sys.exit()
     print('----------------------------')
-    type_ts = config['type_ts']
-    algorithm = config['algorithm']
-    params_PSO = config['params']
-    min_val = config['min_val']
-    max_val = config['max_val']
-    N_parts = config['n_particles']
-    N_iters = config['N_iters']
-    N_epoch = config['N_epoch']
 
-    # get dimension
+    # get optimization problem dimension
     dimension = DIMENSIONS.get(type_ts)
 
-    # get bounds
+    # set bounds
     if isinstance(min_val, float) or isinstance(min_val, int):
         min_val = np.tile(min_val, dimension)
         max_val = np.tile(max_val, dimension)
@@ -71,12 +98,20 @@ def main():
         sys.exit()
     bounds = np.array([min_val, max_val])
 
-    print('Loading calibration data...')
+    print('Loading calibration data')
+    if data_path is not None:
+        try:
+            df_TS_calib = pd.read_pickle(data_path+'/TS_calibration.pkl')
+            df_TS_valid = pd.read_pickle(data_path+'/TS_validation.pkl')
+        except Exception as e:
+            print('ERROR: data not found')
+            print(e)
+            sys.exit()
+    else:
+        print('     - using default data')
+        df_TS_calib = pd.read_pickle(PATH_CALIBRATION[type_ts]['calibration'])
+        df_TS_valid = pd.read_pickle(PATH_CALIBRATION[type_ts]['validation'])
     print('----------------------------')
-    # dataset calibration
-    df_TS_calib = pd.read_pickle(path_save+'/TS_calibration.pkl')
-    # dataset validation
-    df_TS_valid = pd.read_pickle(path_save+'/TS_validation.pkl')
 
     # arguments of evaluate swarm function
     args_calib = (df_TS_calib, type_ts)
@@ -90,8 +125,12 @@ def main():
     pos_best_win = None  # best position ever
     cost_best_win = 10000000  # cost of the winner
 
-    for EE in range(N_epoch):  # for each epoch #######################
-        print('* EPOCH: {}'.format(EE))
+    time_start_all = time.time()
+    print('Start calibration')
+    # for each epoch #######################
+    for EE in range(N_epoch):
+        print('* epoch: {}'.format(EE))
+        time_start_epoch = time.time()
 
         # OPTIMIZATION ALGORITHM
         pos_best, cost_best, history_swarm, \
@@ -103,14 +142,13 @@ def main():
                         params=params_PSO,
                         args_OF=args_calib)
 
-        # cost of EPOCH on validation dataset
+        # cost of epoch on validation dataset
         cost_epoch = evaluate_swarm(pos_best,
                                     *args_valid)
 
         print('     best cost: {:.4f}'.format(cost_best))
         print('     best position: {}'.format(pos_best))
         print('     validation cost: {:.4f}'.format(cost_epoch))
-        # end of the epoch ############################################
 
         # UPDATE BEST WIN - the best on validation
         if cost_epoch < cost_best_win:
@@ -123,11 +161,27 @@ def main():
         opt_vals_epoch.append(opt_vals)
         history_best_epoch.append(history_best)
 
+        # compute the computational time of the epoch
+        time_end_epoch = time.time()
+        print('     computational time: {:.2f} s'.format(
+            time_end_epoch-time_start_epoch))
+
+        # end of the epoch ############################################
+
     print('----------------------------')
+    print('End of the calibration\n')
+    print('############################')
     print('best epoch: {}'.format(epoch_win))
     print('BEST COST EVER: {:.4f}'.format(cost_best_win))
     print('BEST POSITION EVER: {}'.format(pos_best_win))
-    np.savez(path_save+f'/{type_ts}_calib.npz',
+    # compute the time required for the calibration
+    time_end_all = time.time()
+    print('Total computational time: {:.2f} s'.format(
+        time_end_all-time_start_all))
+    print('############################')
+
+    # save the results
+    np.savez(path_save+f'/{name_json}.npz',
              params=pos_best_win,
              epoch_win=epoch_win,
              vals=np.array(opt_vals_epoch),
@@ -136,4 +190,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_params()
+    calibrate_model(config_path=args.path)
