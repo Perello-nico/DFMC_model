@@ -94,11 +94,11 @@ def check_bounds(X: np.array, bounds: np.array):
 # MSL-PSO ALGORITHM
 #####################################################################
 def MSL_PSO_algorithm(N_parts: int, N_iters: int, dimension: int,
-                      bounds: np.array, params: Dict,
+                      bounds: np.array, hyper_params: Dict,
                       args_OF: Tuple):
     # parameters
-    phi_param = params['phi']
-    N_probe = params['N_probe']
+    phi_param = hyper_params['phi']
+    N_probe = hyper_params['N_probe']
 
     # INITIALIZATION ################
     print('   - Swarm initialization...')

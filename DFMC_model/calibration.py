@@ -10,7 +10,7 @@ import sys
 import os
 import time
 from MSL_PSO import MSL_PSO_algorithm
-from evaluate_model import evaluate_swarm, DIMENSIONS
+from evaluate_model import evaluate_swarm, RAIN_PARAMS, NO_RAIN_PARAMS
 
 
 #####################################################################
@@ -65,6 +65,19 @@ class DualOutput:
         self.file.flush()
 
 
+def unpack_params(params: np.array) -> tuple[list, dict, int]:
+    """Unpack the parameters"""
+    calib_params = []
+    fixed_params = dict()
+    for pp in params:
+        if isinstance(params[pp], list):
+            calib_params.append(pp)
+        else:
+            fixed_params[pp] = params[pp]
+    dimension = len(calib_params)
+    return calib_params, fixed_params, dimension
+
+
 #####################################################################
 # ALGORITHM
 #####################################################################
@@ -93,9 +106,10 @@ def calibrate_model(config_path: str, logging: bool = False):
     try:
         type_ts = config['type_ts']
         algorithm = config['algorithm']
-        params_PSO = config['params']
-        min_val = config['min_val']
-        max_val = config['max_val']
+        hyper_params_PSO = config['hyper_params']
+        params = config['params']
+        # min_val = config['min_val']
+        # max_val = config['max_val']
         N_parts = config['n_particles']
         N_iters = config['N_iters']
         N_epoch = config['N_epoch']
@@ -107,19 +121,52 @@ def calibrate_model(config_path: str, logging: bool = False):
     if algorithm not in ALGORITHMS.keys():
         print('ERROR: algorithm not available')
         sys.exit()
+    # check the type of time series
+    if type_ts not in ['rain', 'no_rain']:
+        print('ERROR: wrong type of time series')
+        sys.exit()
     print('----------------------------')
 
-    # get optimization problem dimension
-    dimension = DIMENSIONS.get(type_ts)
-
-    # set bounds
-    if isinstance(min_val, float) or isinstance(min_val, int):
-        min_val = np.tile(min_val, dimension)
-        max_val = np.tile(max_val, dimension)
-    elif (len(min_val) != dimension) | (len(max_val) != dimension):
-        print('ERROR: bounds not correctly assigned')
+    # SET PARAMETERS
+    print('Setting parameters')
+    fixed_params = dict()
+    calib_params = []
+    min_val = []
+    max_val = []
+    try:
+        calib_params, fixed_params, dimension = unpack_params(params)
+        # set bounds
+        for kk in calib_params:
+            min_val.append(params[kk][0])
+            max_val.append(params[kk][1])
+        bounds = np.array([min_val, max_val])
+        # print info
+        print('     - dimension: {}'.format(dimension))
+        print('     - parameters to calibrate:')
+        for kk in calib_params:
+            print('         {}: [{}, {}]'.format(kk,
+                                                 params[kk][0],
+                                                 params[kk][1]))
+        print('     - fixed parameters:')
+        for kk in fixed_params:
+            print('         {}: {}'.format(kk, fixed_params[kk]))
+    except Exception as e:
+        print('ERROR: parameters not correctly assigned')
+        print(e)
         sys.exit()
-    bounds = np.array([min_val, max_val])
+    if len(calib_params) == 0:
+        print('WARNING: no parameters to calibrate')
+        sys.exit()
+    # check on parameters
+    if type_ts == 'rain':
+        if set(calib_params+list(fixed_params.keys())) != set(RAIN_PARAMS):
+            print('ERROR: wrong parameters for the rain model')
+            sys.exit()
+    elif type_ts == 'no_rain':
+        if set(calib_params+list(fixed_params.keys())) != set(NO_RAIN_PARAMS):
+            print('ERROR: wrong parameters for the no rain model')
+            sys.exit()
+    print('----------------------------')
 
     print('Loading calibration data')
     if data_path is not None:
@@ -137,8 +184,8 @@ def calibrate_model(config_path: str, logging: bool = False):
     print('----------------------------')
 
     # arguments of evaluate swarm function
-    args_calib = (df_TS_calib, type_ts)
-    args_valid = (df_TS_valid, type_ts)
+    args_calib = (df_TS_calib, type_ts, calib_params, fixed_params)
+    args_valid = (df_TS_valid, type_ts, calib_params, fixed_params)
 
     # data structures
     history_swarm_epoch = []  # all particles, all times
@@ -162,7 +209,7 @@ def calibrate_model(config_path: str, logging: bool = False):
                         N_iters=N_iters,
                         dimension=dimension,
                         bounds=bounds,
-                        params=params_PSO,
+                        hyper_params=hyper_params_PSO,
                         args_OF=args_calib)
 
         # cost of epoch on validation dataset

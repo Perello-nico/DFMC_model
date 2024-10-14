@@ -165,77 +165,23 @@ def get_dfmc_obs(df_TS: pd.DataFrame) -> np.array:
 # EVALUATE SWARM ##############################################################
 ###############################################################################
 
-# dimension of the optimization problem
-DIMENSIONS = {
-    'rain': 3,
-    'no_rain': 13,
-    'mixed': 16
-}
+RAIN_PARAMS = ['R1', 'R2', 'R3']
+NO_RAIN_PARAMS = ['A1', 'A2', 'A3', 'A4', 'A5',
+                  'Bd1', 'Bd2', 'Bd3', 'Cd1', 'Cd2', 'Cd3',
+                  'Bw1', 'Bw2', 'Bw3', 'Cw1', 'Cw2', 'Cw3']
 
 
-def build_params(x: np.array, type_ts: str) -> Dict:
-    """Build dictionary of params to run DFMC model"""
-    if len(x) != DIMENSIONS[type_ts]:
+def build_params(x: np.array, calib_params: list, fixed_params: dict) -> Dict:
+    if len(x) != len(calib_params):
         print('ERROR: wrong number of parameters')
         return None
-    match type_ts:
-        case 'rain':
-            params = {
-                'MIN_RAIN': 0,
-                'R1': x[0],
-                'R2': x[1],
-                'R3': x[2],
-            }
-        case 'no_rain':
-            params = {
-                'A1': x[0],
-                'A2': 0.555,
-                'A3': 10.6,
-                'A4': 0.5022,
-                'A5': 0.0133,
-                'Bd1': x[1],
-                'Bd2': x[2],
-                'Bd3': x[3],
-                'Cd1': x[4],
-                'Cd2': x[5],
-                'Cd3': x[6],
-                'Bw1': x[7],
-                'Bw2': x[8],
-                'Bw3': x[9],
-                'Cw1': x[10],
-                'Cw2': x[11],
-                'Cw3': x[12],
-            }
-        case 'mixed':
-            params = {
-                'A1': x[0],
-                'A2': 0.555,
-                'A3': 10.6,
-                'A4': 0.5022,
-                'A5': 0.0133,
-                'Bd1': x[1],
-                'Bd2': x[2],
-                'Bd3': x[3],
-                'Cd1': x[4],
-                'Cd2': x[5],
-                'Cd3': x[6],
-                'Bw1': x[7],
-                'Bw2': x[8],
-                'Bw3': x[9],
-                'Cw1': x[10],
-                'Cw2': x[11],
-                'Cw3': x[12],
-                'MIN_RAIN': 0.1,
-                'R1': x[13],
-                'R2': x[14],
-                'R3': x[15],
-            }
-        case _:
-            params = None
+    params = dict(zip(calib_params, x))
+    params.update(fixed_params)
     return params
 
 
 def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
+              calib_params: list, fixed_params: dict,
               mode: str = 'calibration') -> np.array:
     """Comute FFMC values for all parameters settings and all Timeseries"""
     N_parts = X.shape[0]  # number of particles
@@ -246,7 +192,8 @@ def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
     emc = np.full((N_parts, N_TS, N_times), NODATAVAL, dtype='float64')
     k_const = np.full((N_parts, N_TS, N_times), NODATAVAL, dtype='float64')
     for pp in range(N_parts):  # for each particle (e.g. set of parameters)
-        params = build_params(x=X[pp, :], type_ts=type_ts)
+        params = build_params(x=X[pp, :], calib_params=calib_params,
+                              fixed_params=fixed_params)
         if type_ts == 'rain':
             for ts in range(N_TS):
                 dfmc[pp, ts, 0] = df_TS.iloc[ts]['DFMC'].values[0]
@@ -310,13 +257,15 @@ def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
 
 def evaluate_swarm(X: np.array, *args):
     """Compute the OF for each particle"""
-    df_TS, type_ts = args
+    df_TS, type_ts, calib_params, fixed_params = args
     single_part = False
     if len(X.shape) == 1:  # particle-based setting
         X = np.array([X])
         single_part = True
     dfmc_obs = get_dfmc_obs(df_TS=df_TS)
     dfmc, _, _, _ = run_model(df_TS=df_TS, X=X, type_ts=type_ts,
+                              calib_params=calib_params,
+                              fixed_params=fixed_params,
                               mode='calibration')
     # SSR - objective function
     ssr = compute_metric(dfmc=dfmc, dfmc_obs=dfmc_obs,
