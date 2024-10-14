@@ -355,9 +355,9 @@ def check_no_data(rain: float, temp: float, hum: float, wspeed: float,
     ### Return:
         1. (bool): True if no data are present
     """
-    return ~((rain != NODATAVAL) & (temp != NODATAVAL) &
-             (hum != NODATAVAL) & (wspeed != NODATAVAL) &
-             (T0 != NODATAVAL) & (saturation != NODATAVAL))
+    return not ((rain != NODATAVAL) & (temp != NODATAVAL) &
+                (hum != NODATAVAL) & (wspeed != NODATAVAL) &
+                (T0 != NODATAVAL) & (saturation != NODATAVAL))
 
 
 def check_no_update(temp: float) -> bool:
@@ -370,4 +370,4 @@ def check_no_update(temp: float) -> bool:
         1. (bool): True if moisture can be updated
     """
     # only check on temperature
-    return ~(temp >= 0)
+    return not (temp >= 0)
