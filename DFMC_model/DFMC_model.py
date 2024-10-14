@@ -22,7 +22,8 @@ T_STD = 27.0  # °C
 H_STD = 20.0  # %
 W_STD = 0.0  # m/s
 
-
+# The following model parameters are obtained from the calibration process
+# described in the paper mentioned in the README of this repository
 DFMC_PARAMS = dict()
 # rain phase
 DFMC_PARAMS['MIN_RAIN'] = 0.1  # mm
