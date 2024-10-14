@@ -1,0 +1,16 @@
+{
+  "type_ts": "rain", 
+  "algorithm": "MSL_PSO",
+  "hyper_params": {
+    "phi": 0.8,
+    "N_probe": 3
+  },
+  "params": {
+    "R1": [0.001, 80.0],
+    "R2": [0.001, 80.0],
+    "R3": [0.001, 80.0]
+  },
+  "n_particles": 80,
+  "N_iters": 40,
+  "N_epoch": 10
+}
