@@ -28,7 +28,7 @@ PATH_CALIBRATION = {
     },
     'no_rain': {
         'calibration': path_data_calib+'/ISR_no_rain/TS_calibration.pkl',
-        'validation': path_data_calib+'ISR_no_rain/TS_validation.pkl'
+        'validation': path_data_calib+'/ISR_no_rain/TS_validation.pkl'
     }
 }
 
@@ -43,22 +43,45 @@ ALGORITHMS = {
 #####################################################################
 def parse_params():
     parser = argparse.ArgumentParser(description='''Info''')
-    parser.add_argument('--path', dest='path', type=str,
+    parser.add_argument('--config', dest='config', type=str,
                         help='Path of json configuration file')
+    parser.add_argument('--log', dest='log', type=lambda x: eval(x),
+                        default=False, help='Log option [*False, True]')
     args = parser.parse_args()
     return args
+
+
+class DualOutput:
+    def __init__(self, file):
+        self.terminal = sys.stdout
+        self.file = file
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.file.write(message)
+
+    def flush(self):
+        self.terminal.flush()
+        self.file.flush()
 
 
 #####################################################################
 # ALGORITHM
 #####################################################################
-def calibrate_model(config_path: str):
-    print('############################')
-    print('DFMC calibration')
-    print('############################\n')
+def calibrate_model(config_path: str, logging: bool = False):
 
     path_save = '/'.join(config_path.split('/')[:-1])
     name_json = config_path.split('/')[-1].split('.')[0]
+
+    # log file
+    if logging:
+        print('Logging option enabled')
+        logfile = open(path_save+f'/{name_json}.txt', 'w')
+        sys.stdout = DualOutput(logfile)
+
+    print('############################')
+    print('DFMC calibration')
+    print('############################\n')
 
     # settings
     print('Loading settings')
@@ -126,7 +149,7 @@ def calibrate_model(config_path: str):
     cost_best_win = 10000000  # cost of the winner
 
     time_start_all = time.time()
-    print('Start calibration')
+    print('\nStart calibration')
     # for each epoch #######################
     for EE in range(N_epoch):
         print('* epoch: {}'.format(EE))
@@ -168,8 +191,8 @@ def calibrate_model(config_path: str):
 
         # end of the epoch ############################################
 
-    print('----------------------------')
     print('End of the calibration\n')
+
     print('############################')
     print('best epoch: {}'.format(epoch_win))
     print('BEST COST EVER: {:.4f}'.format(cost_best_win))
@@ -188,7 +211,12 @@ def calibrate_model(config_path: str):
              history_swarm=np.array(history_swarm_epoch, dtype='object'),
              history_best=np.array(history_best_epoch, dtype='object'))
 
+    if logging:
+        logfile.close()  # close the log file
+        sys.stdout = sys.__stdout__
+        print('Log saved in: {}'.format(path_save+f'/{name_json}.txt'))
+
 
 if __name__ == '__main__':
     args = parse_params()
-    calibrate_model(config_path=args.path)
+    calibrate_model(config_path=args.config, logging=args.log)
