@@ -2,7 +2,7 @@
   "type_ts": "rain", 
   "algorithm": "MSL_PSO",
   "hyper_params": {
-    "phi": 0.2,
+    "phi": 0.8,
     "N_probe": 3
   },
   "params": {
