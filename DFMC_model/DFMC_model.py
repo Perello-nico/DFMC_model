@@ -22,11 +22,13 @@ T_STD = 27.0  # °C
 H_STD = 20.0  # %
 W_STD = 0.0  # m/s
 
+# minimum rain to trigger rain phase
+MIN_RAIN = 0.1  # mm
+
 # The following model parameters are obtained from the calibration process
 # described in the paper mentioned in the README of this repository
 DFMC_PARAMS = dict()
 # rain phase
-DFMC_PARAMS['MIN_RAIN'] = 0.1  # mm
 DFMC_PARAMS['R1'] = 68.658964
 DFMC_PARAMS['R2'] = 53.374067
 DFMC_PARAMS['R3'] = 0.935953
@@ -124,7 +126,7 @@ def compute_DFMC(moisture: float,
         emc = NODATAVAL
         K_const = NODATAVAL
     else:
-        if check_rain(rain=rain, params=params):
+        if check_rain(rain=rain):
             # rain phase
             moisture_new = rain_phase(
                 rain=rain,
@@ -328,7 +330,7 @@ def delta_rain(rain: float, moisture: float, saturation: float = SAT,
                 1.0 - np.e**(-params['R3'] / rain))
 
 
-def check_rain(rain: float, params: Dict = DFMC_PARAMS) -> bool:
+def check_rain(rain: float) -> bool:
     """
     ## Check if rain phase occurs
 
@@ -338,7 +340,7 @@ def check_rain(rain: float, params: Dict = DFMC_PARAMS) -> bool:
     ### Return:
         1. (bool): True if rain phase
     """
-    return (rain > params['MIN_RAIN'])
+    return (rain > MIN_RAIN)
 
 
 def check_no_data(rain: float, temp: float, hum: float, wspeed: float,
