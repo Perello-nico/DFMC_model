@@ -285,7 +285,7 @@ def run_model(df_TS: pd.DataFrame, X: np.array, type_ts: str,
         elif type_ts == 'mixed':
             for ts in range(N_TS):
                 dfmc[pp, ts, 0] = df_TS.iloc[ts]['DFMC'].values[0]
-                if mode == 'calibtation':
+                if mode == 'calibration':
                     dfmc[pp, ts, 1:], phase[pp, ts, 1:], \
                         emc[pp, ts, 1:], k_const[pp, ts, 1:] = compute_DFMC(
                         moisture=df_TS.iloc[ts]['DFMC'].values[0:-1],
