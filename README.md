@@ -8,3 +8,4 @@ This repository provides code and data for the model's definition and calibratio
 
 The model is available in the **DFMC_model** folder, while the calibration procedure, data and results are available in the **calibration** folder.
 
+The *interactive_run.ipynb* notebook contains and example of the model run.
