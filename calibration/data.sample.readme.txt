@@ -1,0 +1,16 @@
+The dataset MUST be a *pcikle* file
+
+The dataset has to contain a different time series in each row, with the variables in the columns - see *data.sample.pkl*
+
+The following columns are MANDATORY:
+* time: pandas.Series containing the time steps [datetime]
+* Rain: pandas.Series containing the rain occurred in the time step [mm]
+* Temp: pandas.Series containing the temperature [°C]
+* Wspeed: pandas.Series containing the wind speed [m/s]
+* Hum: pandas.Series containing the relative humidity [%]
+* DFMC: pandas.Series containing the measured fuel moisture values [%]
+
+NOTE: the fuel moisture values have to be referred to the total wet mass of fuel (see the paper for more details)
+
+The index MUST be identified by *id* and must be unique for each time series.
+
