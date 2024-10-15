@@ -102,9 +102,21 @@ def calibrate_model(config_path: str, logging: bool = False):
         config = json.load(f)
     for kk in config:
         print('     - {}:{}'.format(kk, config[kk]))
-    data_path = config.get('data_path', None)  # if not present, use default
     try:
         type_ts = config['type_ts']
+        # check if data path is provided, otherwise use default
+        if 'data_path_calib' not in config:
+            default_calib = True
+        else:
+            default_calib = False
+        if 'data_path_valid' not in config:
+            default_valid = True
+        else:
+            default_valid = False
+        data_path_calib = config.get('data_path_calib',
+                                     PATH_CALIBRATION[type_ts]['calibration'])
+        data_path_valid = config.get('data_path_valid',
+                                     PATH_CALIBRATION[type_ts]['validation'])
         algorithm = config['algorithm']
         hyper_params_PSO = config['hyper_params']
         params = config['params']
@@ -167,18 +179,17 @@ def calibrate_model(config_path: str, logging: bool = False):
     print('----------------------------')
 
     print('Loading calibration data')
-    if data_path is not None:
-        try:
-            df_TS_calib = pd.read_pickle(data_path+'/TS_calibration.pkl')
-            df_TS_valid = pd.read_pickle(data_path+'/TS_validation.pkl')
-        except Exception as e:
-            print('ERROR: data not found')
-            print(e)
-            sys.exit()
-    else:
-        print('     - using default data')
-        df_TS_calib = pd.read_pickle(PATH_CALIBRATION[type_ts]['calibration'])
-        df_TS_valid = pd.read_pickle(PATH_CALIBRATION[type_ts]['validation'])
+    try:
+        df_TS_calib = pd.read_pickle(data_path_calib)
+        df_TS_valid = pd.read_pickle(data_path_valid)
+    except Exception as e:
+        print('ERROR: error in loading data')
+        print(e)
+        sys.exit()
+    if default_calib:
+        print('     - using default calibration data')
+    if default_valid:
+        print('     - using default validation data')
     print('----------------------------')
 
     # arguments of evaluate swarm function
