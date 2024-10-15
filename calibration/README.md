@@ -1,5 +1,8 @@
 # Model Calibration Framework
-The folder contains the codes of the calibration framework presented in the paper. The framework can be used to calibrate different parameters - see the *configuration.json.sample* for an example of the configuration file.
+The folder contains the codes of the calibration framework presented in the paper.
+The calibration framework is contained in the *calibration.py* code.
+
+The framework can be used to calibrate different parameters - see the *configuration.json.sample* for an example of the configuration file.
 
 Also, it can be applied to different time series dataset, by adding the *data_path_calib* and *data_path_valid* options in the configuration file - see the *configuration_new-data.json.sample* for an example. If not provided, the default dataset used in paper will be adopted.
 **NOTE**: the provided data has to be compliant with the structure of the dataset as presented in the *data.sample.pkl* file.
