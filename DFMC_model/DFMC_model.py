@@ -100,7 +100,7 @@ def compute_DFMC(moisture: float,
         1. moisture (float): DFMC of previous time step (%)
         2. rain (float): cumulated rain (mm)
         3. temp (float): air temperature (°C)
-        4. wspeed (float): wind speed (m/h)
+        4. wspeed (float): wind speed (m/s)
         5. hum (float): relative humidity (%)
         6. saturation (float): DFMC saturation value, fuel parameter (%)
         7. T0 (float): time constant in standard condition, fuel parameter (h)
